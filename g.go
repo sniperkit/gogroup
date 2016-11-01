@@ -96,8 +96,7 @@ func (g *Group) Unregister(index int) {
 }
 
 // Go calls the given function in a new goroutine.
-//
-// The first call to return cancels the group. A Grouper should recieve on
+// The first call to return cancels the group. A Grouper should receive on
 // Group.Ctx.Done() to gracefully end.
 //
 func (g *Group) Go(f Grouper) {
