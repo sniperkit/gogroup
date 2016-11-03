@@ -17,10 +17,11 @@ import (
 type Line_end byte
 
 const (
-	None    Line_end = iota
-	Unix             // \n
-	Osx              // \r
-	Windows          // \r\n
+	None      Line_end = iota
+	Unix               // \n
+	Osx                // \r
+	Windows            // \r\n
+	Backspace          // \b\b
 )
 
 // A Group is a collection of goroutines working on subtasks that are part of
@@ -136,6 +137,8 @@ func (g *Group) Add_signals(end Line_end) {
 		case <-ch:
 			switch end {
 			case None:
+			case Backspace:
+				fmt.Fprintf(os.Stderr, "\b\b")
 			case Unix:
 				fmt.Fprintf(os.Stderr, "\n")
 			case Osx:
