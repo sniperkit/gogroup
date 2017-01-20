@@ -42,9 +42,14 @@ type Group struct {
 // The derived Context is canceled the first time a function passed to Go
 // returns a non-nil error or the first time Wait returns, whichever occurs
 // first. New must be called to make a Group.
+// ctx can be nil. If nil, context.Background() will be used.
 //
 func New(ctx context.Context) *Group {
-	ctx, cancel := context.WithCancel(ctx)
+	if ctx == nil {
+		ctx, cancel := context.WithCancel(context.Background())
+	} else {
+		ctx, cancel := context.WithCancel(ctx)
+	}
 	return &Group{
 		Ctx:           ctx,
 		Cancel:        cancel,
