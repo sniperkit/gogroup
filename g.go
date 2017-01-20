@@ -45,13 +45,15 @@ type Group struct {
 // ctx can be nil. If nil, context.Background() will be used.
 //
 func New(ctx context.Context) *Group {
+	var con context.Context
+	var cancel context.CancelFunc
 	if ctx == nil {
-		ctx, cancel := context.WithCancel(context.Background())
+		con, cancel = context.WithCancel(context.Background())
 	} else {
-		ctx, cancel := context.WithCancel(ctx)
+		con, cancel = context.WithCancel(ctx)
 	}
 	return &Group{
-		Ctx:           ctx,
+		Ctx:           con,
 		Cancel:        cancel,
 		wait_register: map[int]bool{},
 	}
