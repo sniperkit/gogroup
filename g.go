@@ -30,6 +30,7 @@ const (
 type Group struct {
 	Cancel        context.CancelFunc
 	Ctx           context.Context
+	Interrupted   bool
 	wg            sync.WaitGroup
 	err_once      sync.Once
 	err           error
@@ -126,8 +127,8 @@ func (g *Group) Set_err(err error) {
 	})
 }
 
-// Add_signals will call Group.Cancel() when an os.Interrupt or
-// syscall.SIGTERM signal is received.
+// Add_signals will call Group.Cancel() when an os.Interrupt or syscall.SIGTERM
+// signal is received. Interrupted will be set to true.
 // An "end" character will be output to os.Stderr upon receiving an
 // os.Interrupt or syscall.SIGTERM signal.
 //
@@ -142,6 +143,7 @@ func (g *Group) Add_signals(end Line_end) {
 		select {
 		case <-g.Ctx.Done():
 		case <-ch:
+			g.Interrupted = true
 			switch end {
 			case None:
 			case Backspace:
