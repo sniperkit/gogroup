@@ -3,6 +3,7 @@
 
 // Package gogroup provides synchronization, error propagation, and Context
 // cancelation for groups of goroutines working on subtasks of a common task.
+
 package gogroup
 
 import (
@@ -20,10 +21,10 @@ type Line_end string
 
 const (
 	None      Line_end = ``
-	Unix               = "\n"   // \n
-	Osx                = "\r"   // \r
-	Windows            = "\r\n" // \r\n
-	Backspace          = "\b\b" // \b\b
+	Unix               = "\n"
+	Osx                = "\r"
+	Windows            = "\r\n"
+	Backspace          = "\b\b"
 )
 
 type option func(o *Group)

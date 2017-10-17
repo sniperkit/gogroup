@@ -8,7 +8,7 @@ context to end gracefully when one goroutine ends.
 
 Use Group.Cancel() to cancel all gorountines gracefully.
 
-Group.Interrupted indicates if a os.Signal was received.
+Group.Interrupted indicates if an os.Signal was received.
 
 Group.Err() indicates if an error was set by a goroutine.
 
