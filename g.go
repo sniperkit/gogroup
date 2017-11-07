@@ -29,7 +29,9 @@ const (
 
 type option func(o *Group)
 
-// Use WithCancel() as the context to New(). This is the default and unnecessary.
+// Use WithCancel() as the context to New(). If ctx is a *gogroup.Group, the
+// parent will not Wait(). Use With_cancel_wait() to have a parent gogroup.Group
+// wait on a child gogroup.Group.
 //
 func With_cancel(ctx context.Context) option {
 	return func(o *Group) {
@@ -41,6 +43,23 @@ func With_cancel(ctx context.Context) option {
 			return
 		}
 		o.Context, o.CancelFunc = context.WithCancel(ctx)
+	}
+}
+
+// Use WithCancel() as the context to New(). Will panic if context is already
+// set. Will panic if parent is nil. Register/Unregister use the parent's
+// WaitGroup.
+//
+func With_cancel_wait(parent *Group) option {
+	return func(o *Group) {
+		if o.Context != nil {
+			panic("context already set")
+		}
+		if parent == nil {
+			panic("parent is nil")
+		}
+		o.Context, o.CancelFunc = context.WithCancel(parent)
+		o.parent = parent
 	}
 }
 
@@ -59,6 +78,21 @@ func With_timeout(ctx context.Context, timeout time.Duration) option {
 	}
 }
 
+// Will panic if gg is nil or context is already set.
+//
+func With_timeout_wait(parent *Group, timeout time.Duration) option {
+	return func(o *Group) {
+		if o.Context != nil {
+			panic("context already set")
+		}
+		if parent == nil {
+			panic("parent is nil")
+		}
+		o.Context, o.CancelFunc = context.WithTimeout(parent, timeout)
+		o.parent = parent
+	}
+}
+
 // A Group is a collection of goroutines working on subtasks that are part of
 // the same overall task.
 //
@@ -66,7 +100,8 @@ type Group struct {
 	context.Context
 	context.CancelFunc
 	Interrupted   bool
-	wg            sync.WaitGroup
+	parent        *Group
+	local_wg      *sync.WaitGroup // No used when parent is present
 	err_once      sync.Once
 	err           error
 	wait_lock     sync.Mutex
@@ -89,10 +124,13 @@ func New(opt ...option) *Group {
 	if r.CancelFunc == nil {
 		With_cancel(nil)(r)
 	}
+	if r.parent == nil {
+		r.local_wg = &sync.WaitGroup{}
+	}
 	if r.sig != nil {
-		r.wg.Add(1)
+		r.wg().Add(1)
 		go func() {
-			defer r.wg.Done()
+			defer r.wg().Done()
 			ch := make(chan os.Signal, 1)
 			defer close(ch)
 			signal.Notify(ch, r.sig...)
@@ -119,9 +157,16 @@ func (o *Group) Cancel() {
 // returns the first non-nil error (if any) from them.
 //
 func (o *Group) Wait() error {
-	o.wg.Wait()
+	o.wg().Wait()
 	o.Cancel()
 	return o.err
+}
+
+func (o *Group) wg() *sync.WaitGroup {
+	if o.parent != nil {
+		return o.parent.wg()
+	}
+	return o.local_wg
 }
 
 type Grouper interface {
@@ -136,7 +181,7 @@ type Grouper interface {
 func (o *Group) Register() int {
 	o.wait_lock.Lock()
 	defer o.wait_lock.Unlock()
-	o.wg.Add(1)
+	o.wg().Add(1)
 	o.wait_index++
 	o.wait_register[o.wait_index] = true
 	return o.wait_index
@@ -150,7 +195,7 @@ func (o *Group) Unregister(index int) {
 	defer o.wait_lock.Unlock()
 	if o.wait_register[index] {
 		delete(o.wait_register, index)
-		o.wg.Done()
+		o.wg().Done()
 		o.Cancel()
 	}
 }
@@ -160,9 +205,9 @@ func (o *Group) Unregister(index int) {
 // Group.Ctx.Done() to gracefully end.
 //
 func (o *Group) Go(f Grouper) {
-	o.wg.Add(1)
+	o.wg().Add(1)
 	go func() {
-		defer o.wg.Done()
+		defer o.wg().Done()
 		f.Run(o)
 		o.Cancel()
 	}()
