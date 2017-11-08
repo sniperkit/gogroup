@@ -122,7 +122,7 @@ func New(opt ...option) *Group {
 		o(r)
 	}
 	if r.CancelFunc == nil {
-		With_cancel(nil)(r)
+		With_cancel_nowait(nil)(r)
 	}
 	if r.parent == nil {
 		r.local_wg = &sync.WaitGroup{}
