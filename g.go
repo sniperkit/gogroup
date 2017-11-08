@@ -33,7 +33,7 @@ type option func(o *Group)
 // parent will not Wait(). Use With_cancel_wait() to have a parent gogroup.Group
 // wait on a child gogroup.Group.
 //
-func With_cancel(ctx context.Context) option {
+func With_cancel_nowait(ctx context.Context) option {
 	return func(o *Group) {
 		if o.Context != nil {
 			panic("context already set")
@@ -50,7 +50,7 @@ func With_cancel(ctx context.Context) option {
 // set. Will panic if parent is nil. Register/Unregister use the parent's
 // WaitGroup.
 //
-func With_cancel_wait(parent *Group) option {
+func With_cancel(parent *Group) option {
 	return func(o *Group) {
 		if o.Context != nil {
 			panic("context already set")
@@ -65,7 +65,7 @@ func With_cancel_wait(parent *Group) option {
 
 // Use WithTimeout() as the context to New().
 //
-func With_timeout(ctx context.Context, timeout time.Duration) option {
+func With_timeout_nowait(ctx context.Context, timeout time.Duration) option {
 	return func(o *Group) {
 		if o.Context != nil {
 			panic("context already set")
@@ -80,7 +80,7 @@ func With_timeout(ctx context.Context, timeout time.Duration) option {
 
 // Will panic if gg is nil or context is already set.
 //
-func With_timeout_wait(parent *Group, timeout time.Duration) option {
+func With_timeout(parent *Group, timeout time.Duration) option {
 	return func(o *Group) {
 		if o.Context != nil {
 			panic("context already set")
